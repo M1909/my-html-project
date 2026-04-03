@@ -1,0 +1,660 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aquagri — AR Intelligence Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --navy:#0a1628;--navy2:#0f2040;--navy3:#162d52;--navy4:#1e3a63;
+  --card:#112035;--card2:#0d1e35;--border:#1f3554;
+  --accent:#2d7dd2;--accent2:#3d9be9;--gold:#f0a500;
+  --text:#e8f0fc;--text2:#8fa9cc;--text3:#5a7a99;
+  --red:#e63946;--orange:#f4a261;--green:#2ecc71;
+  --yellow:#f9c74f;--cyan:#00d4e8;--pur:#9b59b6;
+  --lime:#7ec850;--indigo:#5c6bc0;--teal:#00b4a2;--amber:#ffbf00;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--navy);color:var(--text);font-family:"Space Grotesk",sans-serif;font-size:13px;min-height:100vh;}
+.header{background:linear-gradient(135deg,var(--navy2) 0%,var(--navy3) 100%);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:90;box-shadow:0 2px 20px rgba(0,0,0,0.5);}
+.header-left{display:flex;align-items:center;gap:12px;}
+.logo{width:40px;height:40px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:white;flex-shrink:0;}
+.header h1{font-size:16px;font-weight:700;color:var(--text);letter-spacing:0.3px;}
+.header p{font-size:10px;color:var(--text2);margin-top:2px;}
+.header-right{text-align:right;}
+.clock{font-size:18px;font-weight:700;color:var(--gold);font-family:"JetBrains Mono",monospace;letter-spacing:1.5px;}
+.clock-date{font-size:10px;color:var(--text2);margin-top:2px;}
+.sbar{background:var(--card2);border-bottom:1px solid var(--border);padding:5px 24px;display:flex;align-items:center;gap:8px;font-size:10px;color:var(--text2);}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--gold);animation:pulse 0.7s infinite;flex-shrink:0;}
+.dot.ok{background:var(--green);animation:pulse 3s infinite;}
+.dot.err{background:var(--red);animation:none;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.prog{height:2px;background:var(--border);}
+.pf{height:2px;background:linear-gradient(90deg,var(--accent),var(--cyan));transition:width 0.4s;width:0%;}
+.rbtn{background:rgba(45,125,210,.15);color:var(--accent2);border:1px solid rgba(45,125,210,.3);border-radius:6px;padding:3px 12px;font-size:10px;font-family:inherit;cursor:pointer;font-weight:600;}
+.rbtn:hover{background:rgba(45,125,210,.25);}
+.countdown-box{display:flex;align-items:center;gap:6px;background:rgba(240,165,0,0.1);border:1px solid rgba(240,165,0,0.25);border-radius:6px;padding:3px 10px;font-size:10px;color:var(--gold);font-family:"JetBrains Mono",monospace;white-space:nowrap;}
+.countdown-box.urgent{background:rgba(230,57,70,0.12);border-color:rgba(230,57,70,0.3);color:var(--red);}
+.countdown-box.paused{background:rgba(90,122,153,0.15);border-color:rgba(90,122,153,0.3);color:var(--text3);}
+.sbar-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.pause-btn{background:rgba(90,122,153,0.15);color:var(--text2);border:1px solid rgba(90,122,153,0.3);border-radius:6px;padding:3px 10px;font-size:10px;font-family:inherit;cursor:pointer;font-weight:600;transition:all 0.2s;}
+.pause-btn:hover{background:rgba(90,122,153,0.3);color:var(--text);}
+.pause-btn.active{background:rgba(46,204,113,0.12);color:var(--green);border-color:rgba(46,204,113,0.3);}
+.fbar{background:var(--card2);border-bottom:1px solid var(--border);padding:12px 24px;}
+.fbar-t{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px;}
+.frow{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;}
+.fg{display:flex;flex-direction:column;gap:4px;}
+.fg label{font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;}
+.fg select,.fg input{background:var(--navy3);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:11px;font-family:inherit;min-width:120px;outline:none;cursor:pointer;}
+.fg select:focus,.fg input:focus{border-color:var(--accent);}
+.fg select option{background:var(--navy2);}
+.fg input[readonly]{opacity:0.6;cursor:not-allowed;border-style:dashed;}
+.btn-apply{padding:7px 18px;background:var(--accent);color:white;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:background 0.2s;height:34px;align-self:flex-end;}
+.btn-apply:hover{background:var(--accent2);}
+.btn-reset{background:var(--navy3);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:7px 14px;font-size:11px;cursor:pointer;font-family:inherit;height:34px;align-self:flex-end;}
+.btn-reset:hover{background:var(--navy4);color:var(--text);}
+.finfo{font-size:9px;color:var(--text3);margin-top:8px;}
+.kstrip{display:flex;overflow-x:auto;border-bottom:1px solid var(--border);background:var(--navy2);}
+.kpi{padding:12px 14px;border-right:1px solid var(--border);position:relative;overflow:hidden;flex:1;min-width:110px;white-space:nowrap;}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.kpi.total::before{background:var(--accent);}
+.kpi.kred::before{background:var(--red);}
+.kpi.korange::before{background:var(--orange);}
+.kpi.kgreen::before{background:var(--green);}
+.kpi.kgold::before{background:var(--gold);}
+.kpi.klime::before{background:var(--lime);}
+.kpi.kindigo::before{background:var(--indigo);}
+.kpi.kteal::before{background:var(--teal);}
+.kpi.kamber::before{background:var(--amber);}
+.kpi-label{font-size:8px;color:var(--text2);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;line-height:1.2;}
+.kpi-badge{display:inline-block;font-size:7px;padding:1px 4px;border-radius:3px;margin-left:4px;font-weight:700;vertical-align:middle;}
+.kb-red{background:rgba(230,57,70,.18);color:var(--red);}
+.kb-orange{background:rgba(244,162,97,.18);color:var(--orange);}
+.kb-green{background:rgba(46,204,113,.18);color:var(--green);}
+.kpi-value{font-size:16px;font-weight:700;margin:4px 0 2px;font-family:"JetBrains Mono",monospace;color:var(--text);}
+.kpi.kred .kpi-value{color:var(--red);}
+.kpi.korange .kpi-value{color:var(--orange);}
+.kpi.kgreen .kpi-value{color:var(--green);}
+.kpi.kgold .kpi-value{color:var(--gold);}
+.kpi.klime .kpi-value{color:var(--lime);}
+.kpi.kindigo .kpi-value{color:var(--indigo);}
+.kpi.kteal .kpi-value{color:var(--teal);}
+.kpi.kamber .kpi-value{color:var(--amber);}
+.kpi-sub{font-size:8px;color:var(--text3);white-space:normal;line-height:1.3;}
+.kpi-sales-wrap{position:relative;cursor:pointer;}
+.kpi-sales-wrap.popup-open{background:rgba(45,125,210,0.08);border-bottom:2px solid var(--teal);}
+.sales-popup{display:none;position:fixed;z-index:500;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;box-shadow:0 8px 32px rgba(0,0,0,0.8);width:340px;pointer-events:all;}
+.sales-popup.visible{display:block;}
+.sales-popup-title{font-size:10px;font-weight:700;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;}
+.sales-popup-chart{height:150px;position:relative;}
+.sales-yoy-row{display:flex;align-items:center;justify-content:space-between;font-size:9px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);}
+.sales-popup-close{position:absolute;top:8px;right:10px;background:rgba(230,57,70,0.15);color:var(--red);border:1px solid rgba(230,57,70,0.4);border-radius:5px;font-size:13px;cursor:pointer;line-height:1;padding:2px 7px;font-weight:700;z-index:10;}
+.sales-popup-close:hover{background:rgba(230,57,70,0.35);}
+.tbbar{background:var(--card2);border-bottom:1px solid var(--border);padding:0 24px;display:flex;overflow-x:auto;}
+.tab{padding:11px 20px;font-size:11px;font-weight:600;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all 0.2s;}
+.tab:hover{color:var(--text2);}
+.tab.active{color:var(--accent2);border-bottom-color:var(--accent2);}
+.ct{padding:18px 24px;}
+.alert-banner{background:rgba(230,57,70,0.08);border:1px solid rgba(230,57,70,0.25);border-radius:8px;padding:10px 14px;margin-bottom:16px;display:flex;gap:10px;align-items:flex-start;font-size:11px;color:var(--text2);line-height:1.6;}
+.alert-icon{color:var(--red);font-size:16px;flex-shrink:0;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+@media(max-width:1100px){.grid-2{grid-template-columns:1fr;}}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;}
+.chart-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px;}
+.chart-sub{font-size:9px;color:var(--text3);margin-bottom:12px;}
+.chart-wrap{position:relative;height:220px;}
+.chart-wrap-lg{position:relative;height:280px;}
+.ins-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
+@media(max-width:1100px){.ins-grid{grid-template-columns:repeat(2,1fr);}}
+.ins{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;}
+.ins-icon{font-size:20px;margin-bottom:8px;}
+.ins-title{font-size:9px;color:var(--text2);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;}
+.ins-value{font-size:16px;font-weight:700;font-family:"JetBrains Mono",monospace;margin:4px 0;color:var(--cyan);}
+.ins-body{font-size:10px;color:var(--text3);line-height:1.5;}
+.filter-bar{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;}
+.filter-bar label{font-size:9px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:3px;}
+.filter-bar select,.filter-bar input{background:var(--navy3);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:6px;font-size:11px;font-family:inherit;min-width:130px;cursor:pointer;outline:none;}
+.filter-bar select:focus{border-color:var(--accent);}
+.filter-group{display:flex;flex-direction:column;}
+.btn-ghost{background:var(--navy3);border:1px solid var(--border);color:var(--text2);padding:7px 14px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.2s;}
+.btn-ghost:hover{background:var(--navy4);color:var(--text);}
+.val-box{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:7px;font-size:11px;font-weight:600;margin-left:auto;}
+.val-box.ok{background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.3);color:var(--green);}
+.sec-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.sec-title{font-size:13px;font-weight:600;color:var(--text);}
+.sec-sub{font-size:10px;color:var(--text3);margin-top:2px;}
+.sec-total{font-family:"JetBrains Mono";font-size:13px;font-weight:600;color:var(--gold);}
+.table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+thead tr{background:var(--navy3);}
+th{padding:10px 12px;text-align:right;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text2);white-space:nowrap;cursor:pointer;user-select:none;}
+th:first-child,th:nth-child(2){text-align:left;}
+td{padding:9px 12px;text-align:right;border-top:1px solid var(--border);color:var(--text);white-space:nowrap;}
+td:first-child,td:nth-child(2){text-align:left;}
+tr:hover td{background:rgba(45,125,210,0.06);}
+.tfoot td{background:var(--navy3);font-weight:700;color:var(--gold);border-top:2px solid var(--border);}
+.rank-badge{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;font-size:9px;font-weight:700;margin-right:6px;}
+.rank-1{background:rgba(240,165,0,0.2);color:var(--gold);}
+.rank-2{background:rgba(192,192,192,0.2);color:#ccc;}
+.rank-3{background:rgba(205,127,50,0.2);color:#cd7f32;}
+.rank-n{background:rgba(255,255,255,0.05);color:var(--text3);}
+.risk-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:9px;font-weight:600;}
+.risk-red{background:rgba(230,57,70,0.12);color:var(--red);border:1px solid rgba(230,57,70,0.3);}
+.risk-orange{background:rgba(244,162,97,0.12);color:var(--orange);border:1px solid rgba(244,162,97,0.3);}
+.risk-green{background:rgba(46,204,113,0.12);color:var(--green);border:1px solid rgba(46,204,113,0.3);}
+.drill-btn{background:none;border:1px solid var(--border);color:var(--accent2);padding:2px 8px;border-radius:4px;cursor:pointer;font-size:9px;font-family:inherit;transition:all 0.2s;}
+.drill-btn:hover{background:var(--accent);color:white;border-color:var(--accent);}
+.pg-wrap{display:flex;flex-direction:column;align-items:center;gap:5px;margin-top:12px;}
+.pg{display:flex;align-items:center;justify-content:center;gap:4px;flex-wrap:wrap;}
+.pgi{font-size:9px;color:var(--text3);text-align:center;}
+.page-btn{background:var(--navy3);border:1px solid var(--border);color:var(--text);padding:4px 10px;border-radius:5px;font-size:10px;cursor:pointer;font-family:"JetBrains Mono";transition:all 0.15s;}
+.page-btn:hover:not(:disabled):not(.active){background:var(--navy4);}
+.page-btn.active{background:var(--accent);color:white;border-color:var(--accent);cursor:default;}
+.page-btn:disabled{opacity:0.3;cursor:default;}
+.page-size-sel{background:var(--navy3);border:1px solid var(--border);color:var(--text2);padding:3px 7px;border-radius:5px;font-size:10px;font-family:inherit;cursor:pointer;}
+.mover{display:none;position:fixed;inset:0;z-index:200;background:rgba(5,12,25,0.88);backdrop-filter:blur(4px);overflow-y:auto;padding:24px 16px;}
+.mover.open{display:block;}
+.mbox{background:var(--card);border:1px solid var(--border);border-radius:12px;max-width:1150px;margin:0 auto;box-shadow:0 24px 60px rgba(0,0,0,0.7);overflow:hidden;}
+.mhead{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);background:var(--card2);}
+.mhead h2{font-size:14px;font-weight:700;}
+.mclose{background:rgba(230,57,70,0.1);color:var(--red);border:1px solid rgba(230,57,70,0.3);border-radius:6px;padding:5px 12px;font-size:10px;cursor:pointer;font-weight:700;font-family:inherit;}
+.mclose:hover{background:rgba(230,57,70,0.2);}
+.mkpis{display:flex;gap:10px;padding:14px 20px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+.mk{background:var(--navy3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;flex:1;min-width:110px;text-align:center;}
+.mk-label{font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:0.4px;font-weight:700;}
+.mk-value{font-size:15px;font-weight:700;margin-top:4px;font-family:"JetBrains Mono";}
+.msrow{display:flex;align-items:center;gap:10px;padding:10px 20px;border-bottom:1px solid var(--border);}
+.msrow input{background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:7px 12px;font-size:11px;font-family:inherit;width:280px;outline:none;}
+.msrow input:focus{border-color:var(--accent);}
+.mcnt{font-size:10px;color:var(--text3);margin-left:auto;}
+.mbody{padding:0 0 14px;overflow-x:auto;}
+.empty{text-align:center;padding:30px;color:var(--text3);font-size:11px;}
+.mover2{display:none;position:fixed;inset:0;z-index:200;background:rgba(5,12,25,0.88);backdrop-filter:blur(4px);overflow-y:auto;padding:24px 16px;}
+.mover2.open{display:block;}
+.mover3{display:none;position:fixed;inset:0;z-index:200;background:rgba(5,12,25,0.92);backdrop-filter:blur(5px);overflow-y:auto;padding:24px 16px;}
+.mover3.open{display:block;}
+.donut-hint{font-size:9px;color:var(--text3);margin-top:6px;text-align:center;}
+.drill-page{display:none;position:fixed;inset:0;z-index:300;background:var(--navy);overflow-y:auto;}
+.drill-page.open{display:block;}
+.drill-page-header{background:linear-gradient(135deg,var(--navy2) 0%,var(--navy3) 100%);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:10;box-shadow:0 2px 20px rgba(0,0,0,0.5);}
+.drill-back-btn{background:rgba(45,125,210,.15);color:var(--accent2);border:1px solid rgba(45,125,210,.3);border-radius:6px;padding:6px 16px;font-size:11px;font-family:inherit;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:6px;transition:all 0.2s;}
+.drill-back-btn:hover{background:rgba(45,125,210,.3);}
+.drill-page-title{font-size:15px;font-weight:700;color:var(--text);}
+.drill-page-sub{font-size:10px;color:var(--text3);margin-top:2px;}
+.drill-page-body{padding:18px 24px;}
+.drill-kpis{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
+.drill-kpi{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 14px;flex:1;min-width:110px;text-align:center;}
+.drill-kpi-label{font-size:8px;color:var(--text3);text-transform:uppercase;letter-spacing:0.4px;font-weight:700;}
+.drill-kpi-value{font-size:15px;font-weight:700;margin-top:4px;font-family:"JetBrains Mono";}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:var(--navy);}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo">Aqua</div>
+    <div>
+      <h1>Aquagri — AR Intelligence Dashboard</h1>
+      <p>Accounts Receivable · Direct Clients · <span id="hConn">Connecting…</span></p>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="clock" id="ct">--:--:--</div>
+    <div class="clock-date" id="cd">--</div>
+  </div>
+</div>
+
+<div class="sbar">
+  <div class="dot" id="dot"></div>
+  <span id="stxt">Connecting to Business Central…</span>
+  <div class="sbar-right">
+    <div class="countdown-box" id="countdownBox">
+      <span id="countdownLabel">⏱ Auto-refresh in </span><span id="countdownTxt">60:00</span>
+    </div>
+    <button class="pause-btn" id="pauseBtn" onclick="togglePause()">⏸ Pause</button>
+    <button class="rbtn" onclick="location.reload()">🔄 Refresh Now</button>
+  </div>
+</div>
+<div class="prog"><div class="pf" id="pf"></div></div>
+
+<div class="fbar">
+  <div class="fbar-t">🔍 Filters — Applied to all KPIs, Charts and Tables</div>
+  <div class="frow">
+    <div class="fg">
+      <label>Financial Year (Apr–Mar)</label>
+      <select id="fYear" onchange="onFYChange()">
+        <option value="">All Financial Years</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label>From Date <span id="fromDateHint" style="color:var(--teal);font-size:8px;"></span></label>
+      <input type="date" id="fFrom" oninput="onManualDateChange()">
+    </div>
+    <div class="fg">
+      <label>To Date <span id="toDateHint" style="color:var(--teal);font-size:8px;"></span></label>
+      <input type="date" id="fTo" oninput="onManualDateChange()">
+    </div>
+    <div class="fg"><label>State</label><select id="fState"><option value="">All States</option></select></div>
+    <div class="fg"><label>Marketing / Salesperson</label><select id="fSales"><option value="">All</option></select></div>
+    <div class="fg"><label>Posting Group</label><select id="fGroup"><option value="">All Groups</option></select></div>
+    <!-- ✅ FIX: CustomerType now dynamically populated from API -->
+    <div class="fg"><label>Customer Type</label>
+      <select id="fCustType">
+        <option value="">All Types</option>
+      </select>
+    </div>
+    <div class="fg"><label>Customer Search</label><input type="text" id="fCust" placeholder="No or Name…" style="min-width:145px;"></div>
+    <button class="btn-apply" onclick="applyFilters()">Apply</button>
+    <button class="btn-reset" onclick="resetFilters()">Reset</button>
+  </div>
+  <div class="finfo" id="finfo">Loading data from Business Central…</div>
+</div>
+
+<!-- KPI STRIP -->
+<div class="kstrip">
+  <div class="kpi total"><div class="kpi-label">Total Customers</div><div class="kpi-value" id="kTotalCust">—</div><div class="kpi-sub">Master count</div></div>
+  <div class="kpi klime" style="cursor:pointer;" onclick="openNewRepeatModal('new')"><div class="kpi-label">New Customers</div><div class="kpi-value" id="kNewCust">—</div><div class="kpi-sub" id="kNewCustSub">1 invoice · current FY</div></div>
+  <div class="kpi kindigo" style="cursor:pointer;" onclick="openNewRepeatModal('repeat')"><div class="kpi-label">Repeat Customers</div><div class="kpi-value" id="kRepeatCust">—</div><div class="kpi-sub" id="kRepeatCustSub">2+ invoices · current FY</div></div>
+  <div class="kpi kteal kpi-sales-wrap" id="salesKpiWrap" onclick="toggleSalesPopup(event)">
+    <div class="kpi-label">Total Sales <span style="color:var(--teal);font-size:7px;font-weight:600;" id="salesFYLabel">(Current FY)</span></div>
+    <div class="kpi-value" id="kTotalSales">—</div>
+    <div class="kpi-sub">Click for YoY breakdown · Open entries only</div>
+  </div>
+  <div class="kpi total"><div class="kpi-label">Total Outstanding</div><div class="kpi-value" id="k0">—</div><div class="kpi-sub" id="k0s">—</div></div>
+  <div class="kpi kred"><div class="kpi-label">Above 90 Days <span class="kpi-badge kb-red">CRITICAL</span></div><div class="kpi-value" id="k1">—</div><div class="kpi-sub" id="k1s">— % of Total</div></div>
+  <div class="kpi korange"><div class="kpi-label">61–90 Days <span class="kpi-badge kb-orange">WATCH</span></div><div class="kpi-value" id="k2">—</div><div class="kpi-sub" id="k2s">—</div></div>
+  <div class="kpi kgreen"><div class="kpi-label">Below 61 Days <span class="kpi-badge kb-green">SAFE</span></div><div class="kpi-value" id="k3">—</div><div class="kpi-sub" id="k3s">—</div></div>
+  <div class="kpi kgold"><div class="kpi-label">Above 180 Days</div><div class="kpi-value" id="k4">—</div><div class="kpi-sub">Write-off risk</div></div>
+  <div class="kpi kred"><div class="kpi-label">Till Today — Total AR</div><div class="kpi-value" id="kTotalAR">—</div><div class="kpi-sub">🔒 All dates, no filter</div></div>
+  <div class="kpi kamber"><div class="kpi-label">Till Today — Overdue</div><div class="kpi-value" id="kTotalOverdue">—</div><div class="kpi-sub">🔒 DueDate &lt; Today</div></div>
+</div>
+
+<!-- SALES POPUP -->
+<div class="sales-popup" id="salesPopup">
+  <button class="sales-popup-close" id="salesPopupCloseBtn">✕</button>
+  <div class="sales-popup-title">📈 Year-over-Year Sales Comparison</div>
+  <div class="sales-popup-chart"><canvas id="salesYoYChart"></canvas></div>
+  <div class="sales-yoy-row" id="salesYoYRow"></div>
+</div>
+
+<div class="tbbar">
+  <div class="tab active" onclick="swTab('overview')">Overview &amp; Insights</div>
+  <div class="tab" onclick="swTab('top50')">Top Customers</div>
+  <div class="tab" onclick="swTab('ageing')">Ageing Analysis</div>
+  <div class="tab" onclick="swTab('marketing')">By Marketing Person</div>
+  <div class="tab" onclick="swTab('location')">By State</div>
+</div>
+
+<!-- OVERVIEW TAB -->
+<div id="tab-overview">
+<div class="ct">
+  <div class="alert-banner" id="alertDiv" style="display:none;"><span class="alert-icon">⚠</span><span id="alertTxt"></span></div>
+  <div class="grid-2">
+    <div class="chart-card">
+      <div class="chart-title">Ageing Distribution (₹ Lakhs) — Net including credits</div>
+      <div class="chart-sub">Matches BC Aged AR Report · 1–30D, 31–60D, 61–90D, 91–180D, 181–360D, &gt;360D · Click any segment to drill</div>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div style="width:175px;height:175px;flex-shrink:0;position:relative;"><canvas id="cDonut" style="cursor:pointer;"></canvas></div>
+        <div id="donutLeg" style="flex:1;"></div>
+      </div>
+      <div class="donut-hint">👆 Click a chart segment or legend row to drill into that ageing bucket</div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Outstanding by Marketing Person (Top 10) — ₹ Lakhs</div>
+      <div class="chart-sub">SUM(Remaining_Amt_LCY) · Open=true · grouped by SalespersonCode</div>
+      <div class="chart-wrap"><canvas id="cMkt"></canvas></div>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="chart-card">
+      <div class="chart-title">Outstanding by State (Top 10) — ₹ Lakhs</div>
+      <div class="chart-sub">SUM(Remaining_Amt_LCY) · Open=true · grouped by StateDes</div>
+      <div class="chart-wrap"><canvas id="cLoc"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Top 10 Customers — Outstanding — ₹ Lakhs</div>
+      <div class="chart-sub">SUM(Remaining_Amt_LCY) · Open=true · Red=&gt;30% overdue 90d · Amber=&gt;10%</div>
+      <div class="chart-wrap"><canvas id="cCust"></canvas></div>
+    </div>
+  </div>
+  <div style="font-size:11px;font-weight:600;color:var(--text);margin-bottom:12px;margin-top:4px;">📈 Key Metrics &amp; Risk Insights</div>
+  <div class="ins-grid">
+    <div class="ins"><div class="ins-icon">📊</div><div class="ins-title">DSO (Days Sales Outstanding)</div><div class="ins-value" id="iDSO">—</div><div class="ins-body" id="iDSOd">Benchmark: 45–60 days.</div></div>
+    <div class="ins"><div class="ins-icon">⚡</div><div class="ins-title">Top 10 Concentration Risk</div><div class="ins-value" style="color:var(--orange)" id="iConc">—</div><div class="ins-body" id="iConcd">—</div></div>
+    <div class="ins"><div class="ins-icon">🔴</div><div class="ins-title">Write-off Risk (&gt;180 Days)</div><div class="ins-value" style="color:var(--red)" id="iWO">—</div><div class="ins-body" id="iWOd">—</div></div>
+    <div class="ins"><div class="ins-icon">📍</div><div class="ins-title">Geographic Concentration</div><div class="ins-value" id="iGeo">—</div><div class="ins-body" id="iGeod">—</div></div>
+    <div class="ins"><div class="ins-icon">⚡</div><div class="ins-title">Marketing Portfolio Risk</div><div class="ins-value" style="color:var(--orange);font-size:13px" id="iMkt">—</div><div class="ins-body" id="iMktd">—</div></div>
+    <div class="ins"><div class="ins-icon">🚨</div><div class="ins-title">Critical Action Items</div><div class="ins-value" style="color:var(--red)" id="iAct">—</div><div class="ins-body" id="iActd">—</div></div>
+  </div>
+</div>
+</div>
+
+<!-- TOP CUSTOMERS TAB -->
+<div id="tab-top50" style="display:none;">
+<div class="ct">
+  <div style="background:rgba(45,125,210,.06);border:1px solid rgba(45,125,210,.15);border-radius:8px;padding:9px 14px;margin-bottom:12px;font-size:9px;color:var(--text2);">
+    <b style="color:var(--accent2)">Ageing Logic (matches BC):</b> Open=true · 1–30D: PostingDate &gt; (ToDate−30) i.e. days&lt;30 · 31–60D: days in [30,59] · 61–90D: days in [60,89] · 91–180D: days in [90,179] · 181–360D: days in [180,359] · &gt;360D: days≥360.
+  </div>
+  <div class="filter-bar">
+    <div class="filter-group"><label>State</label><select id="t5State"><option value="">All States</option></select></div>
+    <div class="filter-group"><label>Marketing</label><select id="t5Mkt"><option value="">All</option></select></div>
+    <div class="filter-group"><label>Risk Bucket</label>
+      <select id="t5Risk"><option value="">All Risk</option><option value="high">High (&gt;90D)</option><option value="med">Medium (61–90D)</option><option value="low">Safe (&lt;61D)</option></select>
+    </div>
+    <div class="filter-group"><label>Search Customer</label><input type="text" id="t5Srch" placeholder="Name or No…" style="min-width:150px;"></div>
+    <div class="filter-group"><label>Rows / Page</label>
+      <select class="page-size-sel" id="t5PageSize" onchange="t5PS=+this.value;t5Page=1;renderTop50();">
+        <option value="25">25</option><option value="50">50</option><option value="100">100</option>
+      </select>
+    </div>
+    <button class="btn-ghost" onclick="rst50()">Reset</button>
+    <div class="val-box ok" id="t5Tot">Filtered: —</div>
+  </div>
+  <div class="sec-header">
+    <div><div class="sec-title">Customer Outstanding (All)</div><div class="sec-sub" id="t5Sub">Showing —</div></div>
+    <div style="font-size:10px;color:var(--text3);text-align:right;">
+      Filtered: <span style="color:var(--orange);font-family:'JetBrains Mono';font-weight:700;" id="t5FT">—</span> &nbsp;|&nbsp;
+      Grand Total: <span style="color:var(--cyan);font-family:'JetBrains Mono';font-weight:700;" id="t5GT">—</span>
+    </div>
+  </div>
+  <div class="table-wrap"><table>
+    <thead><tr>
+      <th style="text-align:left">Rank</th><th style="text-align:left">Customer</th><th style="text-align:left">State</th><th style="text-align:left">Marketing</th>
+      <th>Total O/S (₹L)</th><th>1–30D</th><th>31–60D</th><th>61–90D</th>
+      <th>91–180D</th><th>181–360D</th><th>&gt;360D</th><th>Risk</th><th>Detail</th>
+    </tr></thead>
+    <tbody id="t5Body"><tr><td colspan="13" class="empty">Loading…</td></tr></tbody>
+  </table></div>
+  <div class="pg-wrap"><div class="pg" id="t5Pg"></div><div class="pgi" id="t5Pgi"></div></div>
+</div>
+</div>
+
+<!-- AGEING TAB -->
+<div id="tab-ageing" style="display:none;">
+<div class="ct">
+  <div style="background:rgba(45,125,210,.06);border:1px solid rgba(45,125,210,.15);border-radius:8px;padding:9px 14px;margin-bottom:12px;font-size:9px;color:var(--text2);">
+    <b style="color:var(--accent2)">BC Match:</b> Open=true · Bucket by PostingDate vs ToDate. 1–30D: days &lt; 30 (PostingDate &gt; ToDate−30). 31–60D: 30 ≤ days &lt; 60. 61–90D: 60 ≤ days &lt; 90. 91–180D: 90 ≤ days &lt; 180. 181–360D: 180 ≤ days &lt; 360. &gt;360D: days ≥ 360.
+  </div>
+  <div class="filter-bar">
+    <div class="filter-group"><label>State</label><select id="aState"><option value="">All States</option></select></div>
+    <div class="filter-group"><label>Marketing</label><select id="aMkt"><option value="">All</option></select></div>
+    <button class="btn-ghost" onclick="rstAge()">Reset</button>
+    <div class="val-box ok" id="aTot">Filtered: —</div>
+  </div>
+  <div class="sec-header">
+    <div><div class="sec-title">Ageing Bucket Summary</div><div class="sec-sub">Buckets match BC Aged AR Report. Negatives = credit memos. Click any row to drill.</div></div>
+    <div class="sec-total" id="ageGT">Grand Total: —</div>
+  </div>
+  <div class="table-wrap"><table>
+    <thead><tr>
+      <th style="text-align:left">Ageing Bucket</th><th>No. of Customers</th><th>No. of Open Entries</th>
+      <th>SUM Remaining (₹L)</th><th>% of Total O/S</th><th>Status</th><th>Drill-Down</th>
+    </tr></thead>
+    <tbody id="ageBody"></tbody>
+    <tfoot id="ageFoot"></tfoot>
+  </table></div>
+</div>
+</div>
+
+<!-- MARKETING TAB -->
+<div id="tab-marketing" style="display:none;">
+<div class="ct">
+  <div style="background:rgba(45,125,210,.06);border:1px solid rgba(45,125,210,.15);border-radius:8px;padding:9px 14px;margin-bottom:12px;font-size:9px;color:var(--text2);">
+    <b style="color:var(--accent2)">Filter Logic:</b> SUM(Remaining_Amt_LCY) · Open=true · grouped by SalespersonCode. Click salesperson row to see ALL their open entries.
+  </div>
+  <div class="filter-bar">
+    <div class="filter-group"><label>State</label><select id="mktState" onchange="renderMkt()"><option value="">All States</option></select></div>
+    <div class="filter-group"><label>Risk / Ageing</label>
+      <select id="mktRisk" onchange="renderMkt()">
+        <option value="">All Risk</option><option value="high">🔴 High (&gt;90D)</option>
+        <option value="med">🟠 Medium (61–90D)</option><option value="low">🟢 Safe (&lt;61D)</option>
+      </select>
+    </div>
+    <button class="btn-ghost" onclick="rstMkt()">Reset</button>
+    <div class="val-box ok" id="mktTot">Filtered: —</div>
+  </div>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;">
+    <div class="sec-title" style="margin-bottom:4px;">Outstanding by Marketing Person — ₹ Lakhs (Stacked)</div>
+    <div class="sec-sub" style="margin-bottom:12px;">SUM(Remaining_Amt_LCY) · Open=true</div>
+    <div class="chart-wrap-lg"><canvas id="cMktD"></canvas></div>
+  </div>
+  <div class="table-wrap"><table>
+    <thead><tr>
+      <th style="text-align:left">Rank</th><th style="text-align:left">Salesperson Code</th>
+      <th>Total O/S (₹L)</th><th>1–30D</th><th>31–60D</th><th>61–90D</th>
+      <th>91–180D</th><th>181–360D</th><th>&gt;360D</th>
+      <th>% of Total</th><th>Risk</th><th>Drill</th>
+    </tr></thead>
+    <tbody id="mktBody"></tbody>
+  </table></div>
+</div>
+</div>
+
+<!-- STATE TAB -->
+<div id="tab-location" style="display:none;">
+<div class="ct">
+  <div style="background:rgba(45,125,210,.06);border:1px solid rgba(45,125,210,.15);border-radius:8px;padding:9px 14px;margin-bottom:12px;font-size:9px;color:var(--text2);">
+    <b style="color:var(--accent2)">Note:</b> State grouping based on <b>StateDes</b> field. Negatives (credit memos) preserved.
+  </div>
+  <div class="filter-bar">
+    <div class="filter-group"><label>Marketing</label><select id="locMkt" onchange="renderLoc()"><option value="">All</option></select></div>
+    <div class="filter-group"><label>Risk / Ageing</label>
+      <select id="locRisk" onchange="renderLoc()">
+        <option value="">All Risk</option><option value="high">🔴 High (&gt;90D)</option>
+        <option value="med">🟠 Medium (61–90D)</option><option value="low">🟢 Safe (&lt;61D)</option>
+      </select>
+    </div>
+    <button class="btn-ghost" onclick="rstLoc()">Reset</button>
+    <div class="val-box ok" id="locTot">Filtered: —</div>
+  </div>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;">
+    <div class="sec-title" style="margin-bottom:4px;">Outstanding by State (Top 12) — ₹ Lakhs</div>
+    <div class="sec-sub" style="margin-bottom:12px;">SUM(Remaining_Amt_LCY) · Open=true · grouped by StateDes</div>
+    <div class="chart-wrap-lg"><canvas id="cLocD"></canvas></div>
+  </div>
+  <div class="table-wrap"><table>
+    <thead><tr>
+      <th style="text-align:left">Rank</th><th style="text-align:left">State</th>
+      <th>Total O/S (₹L)</th><th>1–30D</th><th>31–60D</th><th>61–90D</th>
+      <th>91–180D</th><th>181–360D</th><th>&gt;360D</th>
+      <th>Customers</th><th>% of Total</th><th>Drill</th>
+    </tr></thead>
+    <tbody id="locBody"></tbody>
+  </table></div>
+</div>
+</div>
+
+<!-- CUSTOMER DETAIL MODAL -->
+<div class="mover" id="custModal">
+  <div class="mbox">
+    <div class="mhead"><h2 id="mTit">Customer Detail</h2><button class="mclose" onclick="closeModal()">✕ Close</button></div>
+    <div class="mkpis" id="mKpis"></div>
+    <div class="msrow">
+      <input type="text" id="mSrch" placeholder="Search invoices by document no…" oninput="fltModal()">
+      <select class="page-size-sel" id="mPageSize" onchange="mPS=+this.value;mPage=1;renderModalPagedRows();" style="margin-left:10px;">
+        <option value="25">25/page</option><option value="50">50/page</option><option value="100">100/page</option>
+      </select>
+      <span class="mcnt" id="mCnt"></span>
+    </div>
+    <div class="mbody">
+      <div class="table-wrap"><table>
+        <thead><tr>
+          <th style="text-align:left">#</th><th style="text-align:left">Entry No</th>
+          <th style="text-align:left">Posting Date</th><th style="text-align:left">Due Date</th>
+          <th style="text-align:left">Document No</th><th style="text-align:left">Doc Type</th>
+          <th>Amount LCY (₹)</th><th>Remaining LCY (₹)</th>
+          <th>Days Since Posting</th><th>Ageing Bucket</th>
+        </tr></thead>
+        <tbody id="mBody"></tbody>
+      </table></div>
+      <div class="pg-wrap"><div class="pg" id="mPg"></div><div class="pgi" id="mPgi"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- NEW/REPEAT MODAL -->
+<div class="mover2" id="newRepeatModal">
+  <div class="mbox" style="max-width:1200px;">
+    <div class="mhead"><h2 id="nrModalTitle">Customers</h2><button class="mclose" onclick="closeNewRepeatModal()">✕ Close</button></div>
+    <div class="mkpis" id="nrModalKpis"></div>
+    <div class="msrow">
+      <input type="text" id="nrSearch" placeholder="Search by customer name or number…" oninput="filterNRTable()">
+      <select class="page-size-sel" id="nrPageSize" onchange="nrPS=+this.value;nrPage=1;renderNRPaged();" style="margin-left:10px;">
+        <option value="25">25/page</option><option value="50">50/page</option><option value="100">100/page</option>
+      </select>
+      <span class="mcnt" id="nrCount"></span>
+    </div>
+    <div class="mbody">
+      <div class="table-wrap"><table>
+        <thead><tr>
+          <th style="text-align:left">#</th><th style="text-align:left">Customer No</th><th style="text-align:left">Customer Name</th>
+          <th style="text-align:left">Posting Group</th><th style="text-align:left">State</th>
+          <th>Total Sales (₹)</th><th>Total Profit (₹)</th><th>Margin %</th>
+          <th>Outstanding (₹)</th><th>Invoice Count</th><th>Years Active</th><th>First Invoice</th><th>Latest Invoice</th>
+        </tr></thead>
+        <tbody id="nrBody"></tbody>
+      </table></div>
+      <div class="pg-wrap"><div class="pg" id="nrPg"></div><div class="pgi" id="nrPgi"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- DONUT DRILL MODAL -->
+<div class="mover3" id="donutDrillModal">
+  <div class="mbox" style="max-width:1300px;">
+    <div class="mhead" id="donutDrillHead" style="border-left:4px solid var(--accent);">
+      <div><h2 id="donutDrillTitle">Ageing Bucket Detail</h2><div style="font-size:10px;color:var(--text3);margin-top:3px;" id="donutDrillSubtitle"></div></div>
+      <button class="mclose" onclick="closeDonutDrill()">✕ Close</button>
+    </div>
+    <div class="mkpis" id="donutDrillKpis"></div>
+    <div class="msrow">
+      <input type="text" id="donutDrillSrch" placeholder="Search by customer name, document no…" oninput="filterDonutDrill()">
+      <select class="page-size-sel" id="donutDrillPS" onchange="donutDrillPageSize=+this.value;donutDrillPage=1;renderDonutDrillPaged();" style="margin-left:10px;">
+        <option value="25">25/page</option><option value="50">50/page</option><option value="100">100/page</option><option value="200">200/page</option>
+      </select>
+      <span class="mcnt" id="donutDrillCnt"></span>
+    </div>
+    <div class="mbody">
+      <div class="table-wrap"><table>
+        <thead><tr>
+          <th style="text-align:left">#</th><th style="text-align:left">Customer No</th><th style="text-align:left">Customer Name</th>
+          <th style="text-align:left">State</th><th style="text-align:left">Marketing</th>
+          <th style="text-align:left">Posting Date</th><th style="text-align:left">Due Date</th>
+          <th style="text-align:left">Document No</th><th style="text-align:left">Doc Type</th>
+          <th>Amount (₹)</th><th>Remaining (₹)</th><th>Days</th><th>Action</th>
+        </tr></thead>
+        <tbody id="donutDrillBody"></tbody>
+      </table></div>
+      <div class="pg-wrap"><div class="pg" id="donutDrillPg"></div><div class="pgi" id="donutDrillPgi"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- FULL-PAGE DRILL: AGEING -->
+<div class="drill-page" id="ageDrillPage">
+  <div class="drill-page-header">
+    <button class="drill-back-btn" onclick="closeDrillPage('ageDrillPage')">← Back to Ageing Analysis</button>
+    <div><div class="drill-page-title" id="ageDrillPageTitle">Ageing Drill-Down</div><div class="drill-page-sub" id="ageDrillPageSub"></div></div>
+  </div>
+  <div class="drill-page-body">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+      <select class="page-size-sel" id="agePageSize" onchange="agePS=+this.value;agePage=1;renderAgeDrill();">
+        <option value="25">25/page</option><option value="50">50/page</option><option value="100">100/page</option>
+      </select>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr>
+        <th style="text-align:left">Rank</th><th style="text-align:left">Customer No</th><th style="text-align:left">Customer Name</th>
+        <th style="text-align:left">State</th><th style="text-align:left">Marketing</th>
+        <th>Days Since Posting</th><th>SUM Remaining (₹L)</th>
+      </tr></thead>
+      <tbody id="ageDrillBody"></tbody>
+    </table></div>
+    <div class="pg-wrap"><div class="pg" id="ageDrillPg"></div><div class="pgi" id="ageDrillPgi"></div></div>
+  </div>
+</div>
+
+<!-- FULL-PAGE DRILL: MARKETING -->
+<div class="drill-page" id="mktDrillPage">
+  <div class="drill-page-header">
+    <button class="drill-back-btn" onclick="closeDrillPage('mktDrillPage')">← Back to By Marketing Person</button>
+    <div><div class="drill-page-title" id="mktDrillPageTitle">All Open Entries — Salesperson</div><div class="drill-page-sub" id="mktDrillPageSub"></div></div>
+  </div>
+  <div class="drill-page-body">
+    <div class="drill-kpis" id="mktDrillKpis"></div>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+      <select class="page-size-sel" id="mktPageSize" onchange="mktPS=+this.value;mktPage=1;renderMktDrill();">
+        <option value="25">25/page</option><option value="50">50/page</option><option value="100">100/page</option>
+      </select>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr>
+        <th style="text-align:left">#</th><th style="text-align:left">Customer No</th><th style="text-align:left">Customer Name</th>
+        <th style="text-align:left">State</th><th style="text-align:left">Posting Date</th><th style="text-align:left">Due Date</th>
+        <th style="text-align:left">Document No</th><th style="text-align:left">Doc Type</th>
+        <th>Amount (₹)</th><th>Remaining (₹)</th><th>Days</th><th>Bucket</th><th>Detail</th>
+      </tr></thead>
+      <tbody id="mktDrillBody"></tbody>
+    </table></div>
+    <div class="pg-wrap"><div class="pg" id="mktDrillPg"></div><div class="pgi" id="mktDrillPgi"></div></div>
+  </div>
+</div>
+
+<!-- FULL-PAGE DRILL: STATE -->
+<div class="drill-page" id="locDrillPage">
+  <div class="drill-page-header">
+    <button class="drill-back-btn" onclick="closeDrillPage('locDrillPage')">← Back to By State</button>
+    <div><div class="drill-page-title" id="locDrillPageTitle">Customer Detail by State</div><div class="drill-page-sub" id="locDrillPageSub"></div></div>
+  </div>
+  <div class="drill-page-body">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+      <select class="page-size-sel" id="locPageSize" onchange="locPS=+this.value;locPage=1;renderLocDrill();">
+        <option value="25">25/page</option><option value="50">50/page</option><option value="100">100/page</option>
+      </select>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr>
+        <th style="text-align:left">Rank</th><th style="text-align:left">Customer</th><th style="text-align:left">Marketing</th>
+        <th>Total (₹L)</th><th>1–30D</th><th>31–60D</th><th>61–90D</th>
+        <th>91–180D</th><th>181–360D</th><th>&gt;360D</th><th>Risk</th><th>Detail</th>
+      </tr></thead>
+      <tbody id="locDrillBody"></tbody>
+    </table></div>
+    <div class="pg-wrap"><div class="pg" id="locDrillPg"></div><div class="pgi" id="locDrillPgi"></div></div>
+  </div>
+</div>
+
+<!-- FULL-PAGE DRILL: AGEING OVERVIEW -->
+<div class="drill-page" id="ageOvDrillPage">
+  <div class="drill-page-header">
+    <button class="drill-back-btn" onclick="closeDrillPage('ageOvDrillPage')">← Back to Overview</button>
+    <div><div class="drill-page-title" id="ageOvDrillPageTitle">Ageing Bucket Drill-Down</div><div class="drill-page-sub" id="ageOvDrillPageSub"></div></div>
+  </div>
+  <div class="drill-page-body">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+      <select class="page-size-sel" id="ageOvPS" onchange="ageOvPageSize=+this.value;ageOvPage=1;renderAgeOvDrill();">
+        <option value="25">25/page</option><option value="50">50/page</option><option value="100">100/page</option>
+      </select>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr>
+        <th style="text-align:left">#</th><th style="text-align:left">Customer No</th><th style="text-align:left">Customer Name</th>
+        <th style="text-align:left">State</th><th style="text-align:left">Marketing</th>
+        <th style="text-align:left">Posting Date</th><th style="text-align:left">Due Date</th>
+        <th style="text-align:left">Document No</th><th style="text-align:left">Doc Type</th>
+        <th>Amount (₹)</th><th>Remaining (₹)</th><th>Days</th><th>Bucket</th>
+      </tr></thead>
+      <tbody id="ageOvDrillBody"></tbody>
+    </table></div>
+    <div class="pg-wrap"><div class="pg" id="ageOvDrillPg"></div><div class="pgi" id="ageOvDrillPgi"></div></div>
+  </div>
+</div>
+<script src="script.js"></script>
+</body>
+</html>
